@@ -1,0 +1,40 @@
+TRACE **************************;
+TRACE LOADING EXPRESSIONS TABLE;
+TRACE **************************;
+
+Expressions:
+LOAD
+    Expression_ID,
+    Expression_Label,
+    Expression_Description,
+    Expression
+FROM [lib://Config/RR_Expressions.xlsx]
+(ooxml, embedded labels, table is Expressions);
+
+Config:
+LOAD
+	//Concat(DISTINCT 'v' & Expression_Label & '=' & Replace(Expression,'$','~@~'),'|')		AS 	ConfigParameters
+    Concat(DISTINCT 'v' & Expression_Label & '=' & Replace(Replace(Replace(Expression,'=','~@~'),'$','~#~'),'|','~?~'),'|')		AS 	ConfigParameters
+FROM [lib://Config/RR_Expressions.xlsx]
+(ooxml, embedded labels, table is Expressions);
+
+LET vConfigParameters = Peek('ConfigParameters');
+//exit script;
+DROP TABLE Config;
+
+// Loop
+
+TRACE *** Parameters passed from Config  file: $(vConfigParameters) ***;
+	
+    	FOR vVariableNumber			=	1 to SubStringCount('$(vConfigParameters)','|')+1
+        
+        	LET vVariableName		=	Trim(SubField(SubField('$(vConfigParameters)','|',$(vVariableNumber)),'=',1));
+            //LET $(vVariableName)	=	Replace(Trim(SubField(SubField('$(vConfigParameters)','|',$(vVariableNumber)),'=',2)),'~@~','$');
+            LET $(vVariableName)	=	Replace(Replace(Replace(Trim(SubField(SubField('$(vConfigParameters)','|',$(vVariableNumber)),'=',2)),'~@~','='),'~#~','$'),'~?~','|');
+      	
+        NEXT vVariableNumber;
+        
+        LET vVariableName =;
+        LET vVariableNumber =;
+        
+        LET vConfigParameters =;
